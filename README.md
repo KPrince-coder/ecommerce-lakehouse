@@ -97,7 +97,7 @@ flowchart TD
 
 ## Project Structure
 
-```text
+```plaintext
 ├── data/                      # Sample data files
 │   ├── products.csv           # Product catalog data
 │   ├── orders_apr_2025.xlsx   # Order transaction data
@@ -163,22 +163,26 @@ These datasets are processed through the Lakehouse architecture to enable compre
 ### Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/your-org/ecommerce-lakehouse.git
    cd ecommerce-lakehouse
    ```
 
 2. Install dependencies:
+
    ```bash
-   pip install -r requirements.txt
+   uv add -r requirements.txt
    ```
 
 3. Configure AWS credentials:
+
    ```bash
    aws configure
    ```
 
 4. Deploy the infrastructure:
+
    ```bash
    cd infrastructure/cloudformation
    ./deploy.sh
@@ -190,13 +194,13 @@ For development and testing, you can run the ETL jobs locally:
 
 ```bash
 # Run Bronze layer ETL
-python -m etl.bronze.products_etl
+uv run python -m etl.bronze.products_etl
 
 # Run Silver layer ETL
-python -m etl.silver.products_etl
+uv run python -m etl.silver.products_etl
 
 # Run Gold layer ETL
-python -m etl.gold.product_performance_etl
+uv run python -m etl.gold.product_performance_etl
 ```
 
 ### Deploying to AWS

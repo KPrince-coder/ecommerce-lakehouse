@@ -5,7 +5,8 @@
 ### Source Data Schema
 
 #### Products Data
-```
+
+```plaintext
 - product_id: Integer (Primary Key)
 - department_id: Integer (Foreign Key)
 - department: String
@@ -13,7 +14,8 @@
 ```
 
 #### Orders Data
-```
+
+```plaintext
 - order_num: Integer
 - order_id: Integer (Primary Key)
 - user_id: Integer (Foreign Key)
@@ -23,7 +25,8 @@
 ```
 
 #### Order Items Data
-```
+
+```plaintext
 - id: Integer (Primary Key)
 - order_id: Integer (Foreign Key to Orders)
 - user_id: Integer (Foreign Key)
@@ -38,6 +41,7 @@
 ### Bronze Layer Schema
 
 #### Bronze Products Table
+
 ```sql
 CREATE TABLE bronze.products (
     product_id INT,
@@ -51,6 +55,7 @@ USING DELTA;
 ```
 
 #### Bronze Orders Table
+
 ```sql
 CREATE TABLE bronze.orders (
     order_num INT,
@@ -67,6 +72,7 @@ PARTITIONED BY (date);
 ```
 
 #### Bronze Order Items Table
+
 ```sql
 CREATE TABLE bronze.order_items (
     id INT,
@@ -88,6 +94,7 @@ PARTITIONED BY (date);
 ### Silver Layer Schema
 
 #### Silver Products Table
+
 ```sql
 CREATE TABLE silver.products (
     product_id INT,
@@ -103,6 +110,7 @@ USING DELTA;
 ```
 
 #### Silver Orders Table
+
 ```sql
 CREATE TABLE silver.orders (
     order_id INT,
@@ -121,6 +129,7 @@ PARTITIONED BY (date);
 ```
 
 #### Silver Order Items Table
+
 ```sql
 CREATE TABLE silver.order_items (
     id INT,
@@ -143,6 +152,7 @@ PARTITIONED BY (date)
 ### Gold Layer Schema
 
 #### Gold Daily Sales Table
+
 ```sql
 CREATE TABLE gold.daily_sales (
     date DATE,
@@ -159,6 +169,7 @@ PARTITIONED BY (date);
 ```
 
 #### Gold Product Performance Table
+
 ```sql
 CREATE TABLE gold.product_performance (
     product_id INT,
@@ -176,6 +187,7 @@ PARTITIONED BY (department);
 ```
 
 #### Gold Department Analytics Table
+
 ```sql
 CREATE TABLE gold.department_analytics (
     department STRING,
@@ -191,6 +203,7 @@ PARTITIONED BY (department);
 ```
 
 #### Gold Customer Insights Table
+
 ```sql
 CREATE TABLE gold.customer_insights (
     user_id INT,

@@ -76,21 +76,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 pytest pyspark delta-spark
-          pip install -r requirements.txt
-      
+          uv pip install --upgrade pip
+          uv add flake8 pytest pyspark delta-spark
+          uv add -r requirements.txt
+
       - name: Lint with flake8
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      
+
       - name: Test ETL scripts
         run: pytest tests/
 
@@ -101,24 +101,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      
+
       - name: Package ETL scripts
         run: |
           mkdir -p dist
           cp -r etl/* dist/
           zip -r etl-scripts.zip dist/
-      
+
       - name: Deploy ETL scripts to S3
         run: |
           aws s3 cp etl-scripts.zip s3://ecommerce-lakehouse-deployment/
-      
+
       - name: Deploy infrastructure
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
@@ -126,18 +126,18 @@ jobs:
           template: infrastructure/cloudformation.yaml
           capabilities: CAPABILITY_IAM
           parameter-overrides: "Environment=prod,DeploymentBucket=ecommerce-lakehouse-deployment"
-      
+
       - name: Update Glue jobs
         run: |
-          python scripts/update_glue_jobs.py
-      
+          uv run python scripts/update_glue_jobs.py
+
       - name: Update Step Functions workflow
         run: |
-          python scripts/update_step_functions.py
-      
+          uv run python scripts/update_step_functions.py
+
       - name: Run validation tests
         run: |
-          python scripts/validate_deployment.py
+          uv run python scripts/validate_deployment.py
 ```
 
 ## Infrastructure as Code
@@ -146,7 +146,7 @@ The infrastructure is defined using AWS CloudFormation templates, which are depl
 
 ### CloudFormation Template Structure
 
-```
+```plaintext
 infrastructure/
 ├── cloudformation.yaml       # Main template
 ├── s3-buckets.yaml           # S3 bucket definitions
@@ -274,38 +274,38 @@ flowchart LR
     A[Feature Branch] --> B[Development Environment]
     B --> C[Testing Environment]
     C --> D[Production Environment]
-    
+
     subgraph "Development"
         B1[dev-raw-bucket]
         B2[dev-processed-bucket]
         B3[dev-glue-jobs]
         B4[dev-step-functions]
     end
-    
+
     subgraph "Testing"
         C1[test-raw-bucket]
         C2[test-processed-bucket]
         C3[test-glue-jobs]
         C4[test-step-functions]
     end
-    
+
     subgraph "Production"
         D1[prod-raw-bucket]
         D2[prod-processed-bucket]
         D3[prod-glue-jobs]
         D4[prod-step-functions]
     end
-    
+
     B --> B1
     B --> B2
     B --> B3
     B --> B4
-    
+
     C --> C1
     C --> C2
     C --> C3
     C --> C4
-    
+
     D --> D1
     D --> D2
     D --> D3
@@ -316,7 +316,7 @@ flowchart LR
 
 Environment-specific configurations are managed through parameter files:
 
-```
+```plaintext
 config/
 ├── dev/
 │   ├── parameters.json

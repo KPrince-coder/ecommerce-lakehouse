@@ -50,6 +50,7 @@ flowchart TD
 **Purpose**: Ingest raw product data from CSV files into Delta Lake format with minimal transformation.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[S3 Raw Products CSV] --> B[Read CSV with Schema]
@@ -60,12 +61,14 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Apply schema to raw CSV data
 - Add metadata columns (source_file, ingestion_timestamp)
 - Convert data types to appropriate formats
 - Perform basic structural validation
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, input_file_name
@@ -100,6 +103,7 @@ def process_bronze_products(spark, input_path, output_path):
 **Purpose**: Ingest raw order data from Excel files into Delta Lake format with minimal transformation.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[S3 Raw Orders Excel] --> B[Read Excel with Schema]
@@ -111,6 +115,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Convert Excel data to structured DataFrame
 - Add metadata columns (source_file, ingestion_timestamp)
 - Convert data types to appropriate formats
@@ -118,6 +123,7 @@ flowchart LR
 - Perform basic structural validation
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, input_file_name, to_date, col
@@ -153,6 +159,7 @@ def process_bronze_orders(spark, input_path, output_path):
 **Purpose**: Ingest raw order item data from Excel files into Delta Lake format with minimal transformation.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[S3 Raw Order Items Excel] --> B[Read Excel with Schema]
@@ -164,6 +171,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Convert Excel data to structured DataFrame
 - Add metadata columns (source_file, ingestion_timestamp)
 - Convert data types to appropriate formats
@@ -171,6 +179,7 @@ flowchart LR
 - Perform basic structural validation
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, input_file_name, to_date, col
@@ -208,6 +217,7 @@ def process_bronze_order_items(spark, input_path, output_path):
 **Purpose**: Clean, validate, and enrich product data for analytical use.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Bronze Products Delta] --> B[Read Delta Table]
@@ -219,6 +229,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Remove duplicates based on product_id
 - Standardize department names
 - Validate referential integrity of department_id
@@ -226,6 +237,7 @@ flowchart LR
 - Add last_updated_timestamp for change tracking
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, col, upper, trim
@@ -260,6 +272,7 @@ def process_silver_products(spark, input_path, output_path):
 **Purpose**: Clean, validate, and enrich order data for analytical use.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Bronze Orders Delta] --> B[Read Delta Table]
@@ -271,6 +284,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Remove duplicates based on order_id
 - Standardize timestamp formats
 - Validate numeric ranges for total_amount
@@ -278,6 +292,7 @@ flowchart LR
 - Partition by date for query optimization
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, dayofweek, hour, col
@@ -313,6 +328,7 @@ def process_silver_orders(spark, input_path, output_path):
 **Purpose**: Clean, validate, and enrich order item data for analytical use.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Bronze Order Items Delta] --> B[Read Delta Table]
@@ -325,6 +341,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Remove duplicates based on id
 - Validate referential integrity with orders and products
 - Standardize timestamp formats
@@ -332,6 +349,7 @@ flowchart LR
 - Z-order by product_id and order_id for query performance
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, col
@@ -374,6 +392,7 @@ def process_silver_order_items(spark, input_path, output_path):
 **Purpose**: Aggregate order data to create daily sales metrics.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Silver Orders Delta] --> B[Read Delta Table]
@@ -385,6 +404,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Aggregate orders by date
 - Calculate total sales, order count, and average order value
 - Count unique customers
@@ -392,6 +412,7 @@ flowchart LR
 - Partition by date for time-series analysis
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import sum, count, avg, countDistinct, col
@@ -434,6 +455,7 @@ def process_gold_daily_sales(spark, orders_path, order_items_path, output_path):
 **Purpose**: Analyze product performance metrics for business intelligence.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Silver Products Delta] --> B[Read Delta Tables]
@@ -446,6 +468,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Join products with order items
 - Aggregate by product_id and department
 - Calculate total quantity, sales, and order count
@@ -453,6 +476,7 @@ flowchart LR
 - Partition by department for departmental analysis
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import sum, count, avg, col
@@ -494,6 +518,7 @@ def process_gold_product_performance(spark, products_path, order_items_path, out
 **Purpose**: Aggregate sales data by department for business analysis.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Silver Products Delta] --> B[Read Delta Tables]
@@ -507,6 +532,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Join products, orders, and order items
 - Aggregate by department
 - Calculate total sales, product count, and order count
@@ -515,6 +541,7 @@ flowchart LR
 - Partition by department for efficient querying
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import sum, count, countDistinct, avg, col
@@ -558,6 +585,7 @@ def process_gold_department_analytics(spark, products_path, orders_path, order_i
 **Purpose**: Analyze customer behavior and create customer segments.
 
 **Process Flow**:
+
 ```mermaid
 flowchart LR
     A[Silver Orders Delta] --> B[Read Delta Tables]
@@ -572,6 +600,7 @@ flowchart LR
 ```
 
 **Key Transformations**:
+
 - Join orders, order items, and products
 - Aggregate by user_id
 - Calculate total orders, spend, and average order value
@@ -581,6 +610,7 @@ flowchart LR
 - Partition by customer segment for targeted analysis
 
 **Sample Code**:
+
 ```python
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import sum, count, avg, min, max, datediff, current_date, col, when
