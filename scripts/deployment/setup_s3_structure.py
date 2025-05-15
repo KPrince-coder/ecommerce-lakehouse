@@ -37,6 +37,12 @@ from etl.common.s3_utils import (
     upload_file,
     upload_directory,
 )
+from etl.common.s3_policies import (
+    configure_bucket_security,
+    set_lifecycle_policy,
+    set_bucket_policy,
+    enable_bucket_encryption,
+)
 from config import (
     AWS_REGION,
     S3_BUCKET_NAME,
@@ -78,6 +84,11 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "--skip-upload", action="store_true", help="Skip uploading data files"
+    )
+    parser.add_argument(
+        "--skip-security",
+        action="store_true",
+        help="Skip configuring bucket security settings",
     )
 
     return parser.parse_args()
@@ -155,6 +166,7 @@ def main(
     region: Optional[str] = None,
     data_dir: str = "Data",
     skip_upload: bool = False,
+    configure_security: bool = True,
 ) -> int:
     """
     Main function to set up the S3 bucket structure.
@@ -164,6 +176,7 @@ def main(
         region: AWS region where the bucket should be created
         data_dir: Directory containing the data files to upload
         skip_upload: Whether to skip uploading data files
+        configure_security: Whether to configure bucket security settings
 
     Returns:
         int: Exit code (0 for success, 1 for failure)
@@ -190,11 +203,30 @@ def main(
         logger.error(f"Failed to upload initial data to bucket {bucket_name}")
         return 1
 
+    # Step 4: Configure bucket security settings (if not skipped)
+    if configure_security:
+        logger.info(f"Configuring security settings for bucket {bucket_name}")
+        try:
+            if not configure_bucket_security(bucket_name, region):
+                logger.error(
+                    f"Failed to configure security settings for bucket {bucket_name}"
+                )
+                return 1
+        except Exception as e:
+            logger.error(f"Error configuring security settings: {str(e)}")
+            return 1
+
     logger.info(f"Successfully set up S3 bucket structure for {bucket_name}")
     return 0
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    exit_code = main(args.bucket_name, args.region, args.data_dir, args.skip_upload)
+    exit_code = main(
+        bucket_name=args.bucket_name,
+        region=args.region,
+        data_dir=args.data_dir,
+        skip_upload=args.skip_upload,
+        configure_security=not args.skip_security,
+    )
     sys.exit(exit_code)

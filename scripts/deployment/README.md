@@ -17,7 +17,7 @@ The `setup_s3_structure.py` script creates the S3 bucket and sets up the appropr
 ### Usage
 
 ```bash
-python setup_s3_structure.py [--bucket-name ecommerce-lakehouse] [--region us-east-1] [--data-dir Data] [--skip-upload]
+python setup_s3_structure.py [--bucket-name ecommerce-lakehouse] [--region us-east-1] [--data-dir Data] [--skip-upload] [--skip-security]
 ```
 
 #### Arguments
@@ -26,6 +26,7 @@ python setup_s3_structure.py [--bucket-name ecommerce-lakehouse] [--region us-ea
 - `--region` (optional): AWS region where the bucket should be created (default: from config)
 - `--data-dir` (optional): Directory containing the data files to upload (default: `Data`)
 - `--skip-upload` (optional): Skip uploading data files
+- `--skip-security` (optional): Skip configuring bucket security settings
 
 #### Environment Variables
 
@@ -53,6 +54,12 @@ python setup_s3_structure.py --bucket-name ecommerce-lakehouse-123456789012 --re
 
 # Create bucket without uploading data
 python setup_s3_structure.py --skip-upload
+
+# Create bucket without configuring security settings
+python setup_s3_structure.py --skip-security
+
+# Create bucket without uploading data and without configuring security
+python setup_s3_structure.py --skip-upload --skip-security
 
 # Specify a different data directory
 python setup_s3_structure.py --data-dir /path/to/data
@@ -106,3 +113,25 @@ s3://ecommerce-lakehouse-{account-id}/
 ```
 
 This structure aligns with the medallion architecture pattern described in the project roadmap and includes additional folders for tracking file processing status throughout the pipeline.
+
+## Bucket Security Settings
+
+The script configures the following security settings for the S3 bucket:
+
+### Lifecycle Policies
+
+- **Raw Archive Data**: Transitions to Standard-IA after 30 days, Glacier after 90 days, and expires after 365 days
+- **Temporary Files**: Expires after 7 days
+- **Failed Processing Files**: Expires after 30 days
+
+### Access Controls
+
+- **HTTPS Only**: Denies access over HTTP, requiring HTTPS for all requests
+- **IAM Role Restrictions**: Restricts access to specific IAM roles
+- **Public Access Blocking**: Blocks all public access to the bucket
+
+### Encryption
+
+- **Server-Side Encryption**: Enables AES-256 encryption for all objects in the bucket
+
+These security settings ensure that the data in the bucket is properly protected and managed throughout its lifecycle.
