@@ -13,21 +13,36 @@ This document outlines a detailed step-by-step implementation roadmap for buildi
      - `raw/products/` - For product data
      - `raw/orders/` - For order data
      - `raw/order_items/` - For order items data
+     - `raw/processing/` - Files currently being processed
+     - `raw/processed/` - Files successfully processed
+     - `raw/failed/` - Files that failed processing
+     - `raw/archive/` - Original files after successful processing
    - `bronze/` - For Bronze layer Delta tables
      - `bronze/products/` - For Bronze products Delta table
      - `bronze/orders/` - For Bronze orders Delta table
      - `bronze/order_items/` - For Bronze order items Delta table
+     - `bronze/processing/` - Files currently being processed
+     - `bronze/failed/` - Files that failed processing
+     - `bronze/archive/` - Previous versions of data
    - `silver/` - For Silver layer Delta tables
      - `silver/products/` - For Silver products Delta table
      - `silver/orders/` - For Silver orders Delta table
      - `silver/order_items/` - For Silver order items Delta table
+     - `silver/processing/` - Files currently being processed
+     - `silver/failed/` - Files that failed processing
+     - `silver/archive/` - Previous versions of data
    - `gold/` - For Gold layer Delta tables
      - `gold/daily_sales/` - For Gold daily sales Delta table
      - `gold/product_performance/` - For Gold product performance Delta table
      - `gold/department_analytics/` - For Gold department analytics Delta table
      - `gold/customer_insights/` - For Gold customer insights Delta table
+     - `gold/processing/` - Files currently being processed
+     - `gold/failed/` - Files that failed processing
+     - `gold/archive/` - Previous versions of data
    - `scripts/` - For ETL scripts
    - `logs/` - For execution logs
+   - `metadata/` - Metadata about processing runs
+   - `temp/` - Temporary files during processing
 
 2. **Set up appropriate bucket policies:**
    - Configure lifecycle policies (archive raw data after processing)
@@ -343,7 +358,7 @@ Here's a visual representation of the dependencies between components:
 
 ```mermaid
 flowchart TD
-   
+
     %% Infrastructure setup
     step1[Step 1: S3 Bucket Structure]:::infrastructure --> step2[Step 2: Environment Setup]:::infrastructure
 
