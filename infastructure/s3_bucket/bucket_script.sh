@@ -18,7 +18,12 @@ aws s3api put-object --bucket ecommerce-lakehouse-123 --key rejected/order_items
 aws s3api put-object --bucket ecommerce-lakehouse-123 --key rejected/orders/
 aws s3api put-object --bucket ecommerce-lakehouse-123 --key rejected/products/
 aws s3api put-object --bucket ecommerce-lakehouse-123 --key gold/sales_by_department/
-# Set bucket policies
+aws s3api put-object --bucket ecommerce-lakehouse-123 --key gold/customer_order_metrics/
 
 
 echo "S3 bucket and folders created successfully."
+
+
+echo "\nCreated bucket and folders in the S3 bucket:\n"
+
+aws s3 ls s3://ecommerce-lakehouse-123 --recursive 
