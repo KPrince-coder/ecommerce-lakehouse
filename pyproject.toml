@@ -1,10 +1,9 @@
 [project]
-name = "6-ecommerce-lakehouse"
+name = "ecommerce-lakehouse"
 version = "0.1.0"
-description = "Add your description here"
+description = "E-Commerce Lakehouse Architecture on AWS"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.9"
 dependencies = [
-    "openpyxl>=3.1.5",
     "pandas>=2.2.3",
 ]
