@@ -36,7 +36,9 @@ from etl.common.spark_session import (
 from etl.common.glue_catalog import register_delta_table
 from etl.common.etl_utils import (
     add_metadata_columns,
+    validate_schema,
 )
+from etl.common.schemas import BRONZE_PRODUCTS_SCHEMA, SILVER_PRODUCTS_SCHEMA
 from config import S3_BUCKET_NAME, AWS_REGION, LOG_LEVEL, LOG_FORMAT, get_prefix
 
 # Configure logging
@@ -173,8 +175,17 @@ def transform_products_data(df: DataFrame) -> DataFrame:
     logger.info("Transforming products data for silver layer")
 
     try:
+        # Validate input schema
+        success, error_msg, validated_df = validate_schema(
+            df, BRONZE_PRODUCTS_SCHEMA, strict=False
+        )
+
+        if not success:
+            logger.error(f"Schema validation failed for input data: {error_msg}")
+            raise ValueError(f"Schema validation failed for input data: {error_msg}")
+
         # Standardize department names
-        df_with_std_dept = standardize_department_names(df)
+        df_with_std_dept = standardize_department_names(validated_df)
 
         # Clean product names (remove extra spaces, special characters)
         df_cleaned = df_with_std_dept.withColumn(
@@ -210,8 +221,17 @@ def transform_products_data(df: DataFrame) -> DataFrame:
             "layer",
         )
 
+        # Validate output schema
+        success, error_msg, validated_result_df = validate_schema(
+            result_df, SILVER_PRODUCTS_SCHEMA, strict=True
+        )
+
+        if not success:
+            logger.error(f"Schema validation failed for output data: {error_msg}")
+            raise ValueError(f"Schema validation failed for output data: {error_msg}")
+
         logger.info("Successfully transformed products data for silver layer")
-        return result_df
+        return validated_result_df
     except Exception as e:
         logger.error(f"Error transforming products data: {str(e)}")
         raise
