@@ -21,20 +21,12 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import (
     col,
-    lit,
-    current_timestamp,
     when,
-    dayofweek,
-    hour,
-    to_date,
-    date_format,
-    coalesce,
-    expr,
 )
 
 # Add the project root to the Python path

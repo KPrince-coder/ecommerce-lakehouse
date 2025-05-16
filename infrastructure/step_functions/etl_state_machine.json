@@ -1,0 +1,209 @@
+{
+  "Comment": "E-commerce Lakehouse ETL Pipeline",
+  "StartAt": "BronzeLayerETL",
+  "States": {
+    "BronzeLayerETL": {
+      "Type": "Parallel",
+      "Next": "CheckBronzeLayerStatus",
+      "Branches": [
+        {
+          "StartAt": "BronzeProductsETL",
+          "States": {
+            "BronzeProductsETL": {
+              "Type": "Task",
+              "Resource": "${BronzeProductsLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "BronzeOrdersETL",
+          "States": {
+            "BronzeOrdersETL": {
+              "Type": "Task",
+              "Resource": "${BronzeOrdersLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "BronzeOrderItemsETL",
+          "States": {
+            "BronzeOrderItemsETL": {
+              "Type": "Task",
+              "Resource": "${BronzeOrderItemsLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "CheckBronzeLayerStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.BronzeLayerStatus",
+          "StringEquals": "FAILED",
+          "Next": "FailState"
+        }
+      ],
+      "Default": "SilverLayerETL"
+    },
+    "SilverLayerETL": {
+      "Type": "Parallel",
+      "Next": "CheckSilverLayerStatus",
+      "Branches": [
+        {
+          "StartAt": "SilverProductsETL",
+          "States": {
+            "SilverProductsETL": {
+              "Type": "Task",
+              "Resource": "${SilverProductsLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "SilverOrdersETL",
+          "States": {
+            "SilverOrdersETL": {
+              "Type": "Task",
+              "Resource": "${SilverOrdersLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "SilverOrderItemsETL",
+          "States": {
+            "SilverOrderItemsETL": {
+              "Type": "Task",
+              "Resource": "${SilverOrderItemsLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "CheckSilverLayerStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.SilverLayerStatus",
+          "StringEquals": "FAILED",
+          "Next": "FailState"
+        }
+      ],
+      "Default": "GoldLayerETL"
+    },
+    "GoldLayerETL": {
+      "Type": "Parallel",
+      "Next": "CheckGoldLayerStatus",
+      "Branches": [
+        {
+          "StartAt": "GoldProductPerformanceETL",
+          "States": {
+            "GoldProductPerformanceETL": {
+              "Type": "Task",
+              "Resource": "${GoldProductPerformanceLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "GoldCustomerInsightsETL",
+          "States": {
+            "GoldCustomerInsightsETL": {
+              "Type": "Task",
+              "Resource": "${GoldCustomerInsightsLambdaArn}",
+              "Retry": [
+                {
+                  "ErrorEquals": ["States.ALL"],
+                  "IntervalSeconds": 60,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2.0
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      ]
+    },
+    "CheckGoldLayerStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.GoldLayerStatus",
+          "StringEquals": "FAILED",
+          "Next": "FailState"
+        }
+      ],
+      "Default": "SuccessState"
+    },
+    "SuccessState": {
+      "Type": "Succeed"
+    },
+    "FailState": {
+      "Type": "Fail",
+      "Error": "ETLProcessFailed",
+      "Cause": "One or more ETL processes failed"
+    }
+  }
+}
