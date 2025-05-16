@@ -1,8 +1,8 @@
 """
-Lambda function to trigger the {ETL_NAME} ETL Glue job.
+Lambda function to trigger the Silver Products ETL Glue job.
 
 This function is triggered by the Step Functions state machine and starts
-the Glue job that runs the {ETL_NAME} ETL process.
+the Glue job that runs the Silver Products ETL process.
 """
 
 import json
@@ -35,7 +35,7 @@ for handler in logger.handlers:
 glue_client = boto3.client("glue")
 
 # Get environment variables or use config defaults
-GLUE_JOB_NAME = os.environ.get("GLUE_JOB_NAME", "{GLUE_JOB_NAME}")
+GLUE_JOB_NAME = os.environ.get("GLUE_JOB_NAME", "silver-products-etl")
 S3_BUCKET = os.environ.get("S3_BUCKET_NAME", S3_BUCKET_NAME)
 REGION = os.environ.get("AWS_REGION", AWS_REGION)
 
@@ -71,26 +71,26 @@ def lambda_handler(event, context):
         )
 
         job_run_id = response["JobRunId"]
-        logger.info(f"Started Glue job {GLUE_JOB_NAME} with run ID {job_run_id}")
+        logger.info(f"Started Glue job silver-products-etl with run ID {job_run_id}")
 
         # Wait for the job to complete
         job_status = wait_for_job_completion(job_run_id)
 
         if job_status == "SUCCEEDED":
-            logger.info(f"Glue job {GLUE_JOB_NAME} completed successfully")
+            logger.info(f"Glue job silver-products-etl completed successfully")
             return {
                 "statusCode": 200,
                 "jobRunId": job_run_id,
                 "status": "SUCCEEDED",
-                "message": f"Glue job {GLUE_JOB_NAME} completed successfully",
+                "message": f"Glue job silver-products-etl completed successfully",
             }
         else:
-            logger.error(f"Glue job {GLUE_JOB_NAME} failed with status {job_status}")
+            logger.error(f"Glue job silver-products-etl failed with status {job_status}")
             return {
                 "statusCode": 500,
                 "jobRunId": job_run_id,
                 "status": "FAILED",
-                "message": f"Glue job {GLUE_JOB_NAME} failed with status {job_status}",
+                "message": f"Glue job silver-products-etl failed with status {job_status}",
             }
     except Exception as e:
         logger.error(f"Error starting Glue job: {str(e)}")

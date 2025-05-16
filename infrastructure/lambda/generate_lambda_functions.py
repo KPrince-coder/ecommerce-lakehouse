@@ -68,7 +68,7 @@ ETL_PROCESSES = [
 ]
 
 
-def generate_lambda_function(template_path, output_path, etl_process):
+def generate_lambda_function(template_path, output_path, etl_process, force=True):
     """
     Generate a Lambda function file from the template.
 
@@ -76,9 +76,10 @@ def generate_lambda_function(template_path, output_path, etl_process):
         template_path: Path to the template file
         output_path: Path to the output file
         etl_process: ETL process configuration
+        force: Force regeneration even if the file exists
     """
-    # Skip if the file already exists and is not the template
-    if output_path.exists() and output_path.name != "lambda_template.py":
+    # Skip if the file already exists and is not the template, and force is False
+    if not force and output_path.exists() and output_path.name != "lambda_template.py":
         print(f"Skipping existing file: {output_path}")
         return
 

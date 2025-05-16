@@ -62,82 +62,182 @@ The CI/CD pipeline is implemented using GitHub Actions workflows defined in YAML
 ### Main Workflow
 
 ```yaml
-name: E-Commerce Lakehouse CI/CD
+name: ETL Pipeline CI/CD
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
 
 jobs:
-  validate:
+  lint:
+    name: Lint Code
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
 
-      - name: Install dependencies
-        run: |
-          uv pip install --upgrade pip
-          uv add flake8 pytest pyspark delta-spark
-          uv add -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black mypy
+        pip install -r requirements.txt
 
-      - name: Lint with flake8
-        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Test ETL scripts
-        run: pytest tests/
+    - name: Check formatting with black
+      run: |
+        black --check .
 
-  build-and-deploy:
-    needs: validate
-    if: github.ref == 'refs/heads/main'
+    - name: Type check with mypy
+      run: |
+        mypy --ignore-missing-imports etl/
+
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
+    needs: lint
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
 
-      - name: Package ETL scripts
-        run: |
-          mkdir -p dist
-          cp -r etl/* dist/
-          zip -r etl-scripts.zip dist/
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        pip install -r requirements.txt
 
-      - name: Deploy ETL scripts to S3
-        run: |
-          aws s3 cp etl-scripts.zip s3://ecommerce-lakehouse-deployment/
+    - name: Run tests
+      run: |
+        pytest tests/ --cov=etl --cov-report=xml
 
-      - name: Deploy infrastructure
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: ecommerce-lakehouse-stack
-          template: infrastructure/cloudformation.yaml
-          capabilities: CAPABILITY_IAM
-          parameter-overrides: "Environment=prod,DeploymentBucket=ecommerce-lakehouse-deployment"
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
 
-      - name: Update Glue jobs
-        run: |
-          uv run python scripts/update_glue_jobs.py
+  build:
+    name: Build Artifacts
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
-      - name: Update Step Functions workflow
-        run: |
-          uv run python scripts/update_step_functions.py
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Run validation tests
-        run: |
-          uv run python scripts/validate_deployment.py
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create Lambda layers
+      run: |
+        mkdir -p build/lambda/layers
+        python infrastructure/lambda/create_config_layer.py
+
+    - name: Generate Lambda functions
+      run: |
+        python infrastructure/lambda/generate_lambda_functions.py
+
+    - name: Package Lambda functions
+      run: |
+        mkdir -p build/lambda
+        for file in infrastructure/lambda/*.py; do
+          if [[ $(basename $file) != "create_config_layer.py" && $(basename $file) != "generate_lambda_functions.py" && $(basename $file) != "lambda_template.py" ]]; then
+            zip -j build/lambda/$(basename ${file%.py}).zip $file
+          fi
+        done
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: etl-artifacts
+        path: |
+          build/
+          infrastructure/step_functions/
+          infrastructure/cloudformation/
+
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: build
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    environment: dev
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: etl-artifacts
+        path: .
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Create S3 bucket if not exists
+      run: |
+        aws s3api head-bucket --bucket ${{ secrets.S3_BUCKET_NAME }} 2>/dev/null || aws s3 mb s3://${{ secrets.S3_BUCKET_NAME }} --region ${{ secrets.AWS_REGION }}
+
+    - name: Upload artifacts to S3
+      run: |
+        aws s3 cp build/lambda/layers/config_layer.zip s3://${{ secrets.S3_BUCKET_NAME }}/lambda/layers/config_layer.zip
+        aws s3 cp infrastructure/step_functions/etl_state_machine.json s3://${{ secrets.S3_BUCKET_NAME }}/step_functions/etl_state_machine.json
+        for file in build/lambda/*.zip; do
+          aws s3 cp $file s3://${{ secrets.S3_BUCKET_NAME }}/lambda/$(basename $file)
+        done
+
+    - name: Deploy CloudFormation stack
+      run: |
+        aws cloudformation deploy \
+          --template-file infrastructure/cloudformation/etl_pipeline.yaml \
+          --stack-name ${{ secrets.STACK_NAME }}-dev \
+          --capabilities CAPABILITY_IAM \
+          --parameter-overrides \
+            S3BucketName=${{ secrets.S3_BUCKET_NAME }} \
+            GlueJobPrefix=${{ secrets.GLUE_JOB_PREFIX }}-dev \
+            AwsRegion=${{ secrets.AWS_REGION }} \
+            ConfigLayerS3Key=lambda/layers/config_layer.zip
 ```
 
 ## Infrastructure as Code

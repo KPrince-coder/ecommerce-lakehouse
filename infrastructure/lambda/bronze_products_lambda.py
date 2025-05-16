@@ -11,13 +11,18 @@ import os
 import sys
 import boto3
 from datetime import datetime
-from pathlib import Path
 
-# Add the project root to the Python path to import config
+# Add the Lambda layer path to the Python path to import config
 sys.path.append("/opt/python")
 
 # Import project configuration
-from config import S3_BUCKET_NAME, AWS_REGION, LOG_LEVEL, LOG_FORMAT
+from config import (
+    S3_BUCKET_NAME,
+    AWS_REGION,
+    LOG_LEVEL,
+    LOG_FORMAT,
+    GLUE_DATABASE_PREFIX,
+)
 
 # Configure logging
 logger = logging.getLogger()
@@ -51,6 +56,8 @@ def lambda_handler(event, context):
     # Get the date from the event or use current date
     date = event.get("date", datetime.now().strftime("%Y-%m-%d"))
 
+    # Get additional parameters if needed
+
     try:
         # Start the Glue job
         response = glue_client.start_job_run(
@@ -59,30 +66,31 @@ def lambda_handler(event, context):
                 "--date": date,
                 "--bucket-name": S3_BUCKET,
                 "--region": REGION,
+                "--glue-database-prefix": GLUE_DATABASE_PREFIX,
             },
         )
 
         job_run_id = response["JobRunId"]
-        logger.info(f"Started Glue job {GLUE_JOB_NAME} with run ID {job_run_id}")
+        logger.info(f"Started Glue job bronze-products-etl with run ID {job_run_id}")
 
         # Wait for the job to complete
         job_status = wait_for_job_completion(job_run_id)
 
         if job_status == "SUCCEEDED":
-            logger.info(f"Glue job {GLUE_JOB_NAME} completed successfully")
+            logger.info(f"Glue job bronze-products-etl completed successfully")
             return {
                 "statusCode": 200,
                 "jobRunId": job_run_id,
                 "status": "SUCCEEDED",
-                "message": f"Glue job {GLUE_JOB_NAME} completed successfully",
+                "message": f"Glue job bronze-products-etl completed successfully",
             }
         else:
-            logger.error(f"Glue job {GLUE_JOB_NAME} failed with status {job_status}")
+            logger.error(f"Glue job bronze-products-etl failed with status {job_status}")
             return {
                 "statusCode": 500,
                 "jobRunId": job_run_id,
                 "status": "FAILED",
-                "message": f"Glue job {GLUE_JOB_NAME} failed with status {job_status}",
+                "message": f"Glue job bronze-products-etl failed with status {job_status}",
             }
     except Exception as e:
         logger.error(f"Error starting Glue job: {str(e)}")

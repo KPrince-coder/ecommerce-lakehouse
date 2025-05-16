@@ -5,7 +5,7 @@ Parameters:
   S3BucketName:
     Type: String
     Description: S3 bucket name for the lakehouse
-    Default: ecommerce-lakehouse
+    Default: ecommerce-lakehouse-bucket-123
 
   GlueJobPrefix:
     Type: String
@@ -15,7 +15,12 @@ Parameters:
   AwsRegion:
     Type: String
     Description: AWS region
-    Default: us-east-1
+    Default: eu-west-1
+
+  GlueDatabasePrefix:
+    Type: String
+    Description: Prefix for Glue database names
+    Default: ecommerce
 
   ConfigLayerS3Key:
     Type: String
@@ -93,6 +98,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-bronze-products-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/bronze_products_lambda.zip
@@ -114,6 +120,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-bronze-orders-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/bronze_orders_lambda.zip
@@ -135,6 +142,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-bronze-order-items-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/bronze_order_items_lambda.zip
@@ -156,6 +164,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-silver-products-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/silver_products_lambda.zip
@@ -177,6 +186,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-silver-orders-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/silver_orders_lambda.zip
@@ -198,6 +208,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-silver-order-items-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/silver_order_items_lambda.zip
@@ -219,6 +230,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-gold-product-performance-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/gold_product_performance_lambda.zip
@@ -240,6 +252,7 @@ Resources:
           GLUE_JOB_NAME: !Sub "${GlueJobPrefix}-gold-customer-insights-etl"
           S3_BUCKET_NAME: !Ref S3BucketName
           AWS_REGION: !Ref AwsRegion
+          ECOM_GLUE_DATABASE_PREFIX: !Ref GlueDatabasePrefix
       Code:
         S3Bucket: !Ref S3BucketName
         S3Key: lambda/gold_customer_insights_lambda.zip
