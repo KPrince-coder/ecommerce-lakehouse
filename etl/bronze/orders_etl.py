@@ -35,7 +35,7 @@ from etl.common.etl_utils import (
     add_metadata_columns,
     validate_schema,
 )
-from etl.common.schemas import RAW_ORDERS_SCHEMA, BRONZE_ORDERS_SCHEMA
+from etl.common.schemas import RAW_ORDERS_SCHEMA
 from config import S3_BUCKET_NAME, AWS_REGION, LOG_LEVEL, LOG_FORMAT, get_prefix
 
 # Configure logging
