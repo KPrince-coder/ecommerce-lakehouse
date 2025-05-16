@@ -168,7 +168,7 @@ def calculate_product_performance(
                 / F.size(F.collect_list("id").over(Window.partitionBy("order_id")))
             ).alias("total_sales"),
             # Reorder rate
-            (sum(when(col("reordered") == True, 1).otherwise(0)) / count("id")).alias(
+            (sum(when(col("reordered"), 1).otherwise(0)) / count("id")).alias(
                 "reorder_rate"
             ),
             # Average days between orders
