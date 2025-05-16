@@ -95,12 +95,6 @@ def create_spark_session(
     if enable_hive_support:
         builder = builder.enableHiveSupport()
 
-    # Create the Spark session
-    spark = builder.getOrCreate()
-
-    # Set log level
-    spark.sparkContext.setLogLevel(log_level)
-
     # Configure Delta Lake if enabled
     if enable_delta:
         # Import Delta Lake packages
@@ -109,12 +103,17 @@ def create_spark_session(
             from delta import configure_spark_with_delta_pip
 
             # Configure Spark with Delta
-            configure_spark_with_delta_pip(spark)
-
+            builder = configure_spark_with_delta_pip(builder)
             logger.info("Delta Lake support enabled")
         except ImportError as e:
             logger.warning(f"Failed to import Delta Lake packages: {str(e)}")
             logger.warning("Delta Lake support may not be fully enabled")
+
+    # Create the Spark session
+    spark = builder.getOrCreate()
+
+    # Set log level
+    spark.sparkContext.setLogLevel(log_level)
 
     # Log Spark session creation
     logger.info(f"Created Spark session with app name: {app_name}")
