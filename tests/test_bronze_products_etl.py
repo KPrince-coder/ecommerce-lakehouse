@@ -7,7 +7,7 @@ This module contains tests for the Bronze Products ETL process.
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from pyspark.sql import SparkSession
 
@@ -21,7 +21,7 @@ from etl.bronze.products_etl import (
     register_products_table,
     main,
 )
-from etl.common.schemas import RAW_PRODUCTS_SCHEMA
+from etl.common.schemas import RAW_PRODUCTS_SCHEMA, BRONZE_PRODUCTS_SCHEMA
 
 
 class TestBronzeProductsETL(unittest.TestCase):
@@ -54,17 +54,20 @@ class TestBronzeProductsETL(unittest.TestCase):
         # Stop the Spark session
         cls.spark.stop()
 
-    @patch("etl.bronze.products_etl.spark")
-    def test_read_products_data(self, mock_spark):
+    @patch("etl.bronze.products_etl.logger")
+    def test_read_products_data(self, mock_logger):
         """Test reading products data."""
-        # Configure the mock
-        mock_spark.read.format.return_value.option.return_value.option.return_value.schema.return_value.load.return_value = self.sample_df
+        # Create a mock SparkSession
+        mock_spark = MagicMock()
+        mock_df = MagicMock()
+        mock_df.count.return_value = 4
+        mock_spark.read.format.return_value.option.return_value.option.return_value.schema.return_value.load.return_value = mock_df
 
         # Call the function
         result_df = read_products_data(mock_spark, "test-bucket", "2023-05-15")
 
-        # Assert that the function returns the sample DataFrame
-        self.assertEqual(result_df, self.sample_df)
+        # Assert that the function returns the mock DataFrame
+        self.assertEqual(result_df, mock_df)
 
         # Assert that the read method was called with the correct arguments
         mock_spark.read.format.assert_called_once_with("csv")
@@ -92,7 +95,7 @@ class TestBronzeProductsETL(unittest.TestCase):
 
         # Assert that validate_schema was called with the correct arguments
         mock_validate_schema.assert_called_once_with(
-            self.sample_df, RAW_PRODUCTS_SCHEMA, strict=True
+            self.sample_df, BRONZE_PRODUCTS_SCHEMA, strict=True
         )
 
         # Assert that add_metadata_columns was called with the correct arguments

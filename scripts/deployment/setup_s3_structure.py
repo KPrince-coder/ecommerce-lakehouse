@@ -39,9 +39,6 @@ from etl.common.s3_utils import (
 )
 from etl.common.s3_policies import (
     configure_bucket_security,
-    set_lifecycle_policy,
-    set_bucket_policy,
-    enable_bucket_encryption,
 )
 from config import (
     AWS_REGION,
